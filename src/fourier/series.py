@@ -31,7 +31,7 @@ class Expander:
     def evaluate(self, a_n, b_n, x, expansion_type='odd'):
         if expansion_type == 'odd':
             s = 0
-            for n in range(len(b_n)):
+            for n in range(1, len(b_n)):
                 s += b_n[n] * math.sin(n * math.pi * x/self.L)
             return s
         elif expansion_type == 'even':
@@ -40,7 +40,10 @@ class Expander:
                 s += a_n[n] * math.cos(n * math.pi * x/self.L)
             return s
         elif expansion_type == 'quarter_odd':
-            pass
+            s = 0
+            for n in range(1, len(b_n)):
+                s += b_n[n] * math.sin(n * math.pi * x/(2.0 * self.L))
+            return s
         elif expansion_type == 'quarter_even':
             s = a_n[0]
             for n in range(1, len(a_n)):
@@ -83,6 +86,19 @@ class Expander:
             cosnpix_L = cos_vectorize(n * math.pi * xs/self.L)
             a = 2.0/self.L * integrate.simpson(y=(extended_signal * cosnpix_L), x=xs)
             a_n[n] = a
+        return a_n, b_n
+
+    def _quarter_range_odd(self, signal, maximum_n):
+        a_n = np.zeros((maximum_n + 1), dtype=float)
+        b_n = np.zeros((maximum_n + 1), dtype=float)
+        delta_x = self.L / len(signal)
+        xs = np.arange(0, self.L + delta_x, delta_x)  # [0, dx, ..., L]
+        next_signal_value = signal[-1] + (signal[-1] - signal[-2])
+        extended_signal = np.concatenate((signal, np.array([next_signal_value])), axis=0)
+        for n in range(1, maximum_n + 1):
+            sinnpix_2L = sin_vectorize(n * math.pi * xs/(2.0 * self.L))
+            b = 1.0/self.L * ((-1)**(n + 1) + 1) * integrate.simpson(y=(extended_signal * sinnpix_2L), x=xs)
+            b_n[n] = b
         return a_n, b_n
 
     def _quarter_range_even(self, signal, maximum_n):
