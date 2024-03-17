@@ -42,7 +42,10 @@ class Expander:
         elif expansion_type == 'quarter_odd':
             pass
         elif expansion_type == 'quarter_even':
-            pass
+            s = a_n[0]
+            for n in range(1, len(a_n)):
+                s += a_n[n] * math.cos(n * math.pi * x/(2.0 * self.L))
+            return s
         else:
             raise NotImplementedError(f"Expander.evaluate(): Not implemented expansion type '{expansion_type}'")
 
@@ -73,12 +76,30 @@ class Expander:
         b_n = np.zeros((maximum_n + 1), dtype=float)
         delta_x = self.L / len(signal)
         xs = np.arange(0, self.L + delta_x, delta_x)  # [0, dx, ..., L]
-        # print(f"xs.shape = {xs.shape}; xs[-2] = {xs[-2]}; xs[-1] = {xs[-1]}")
         next_signal_value = signal[-1] + (signal[-1] - signal[-2])
         extended_signal = np.concatenate((signal, np.array([next_signal_value])), axis=0)
         a_n[0] = 1.0/self.L * integrate.simpson(y=(extended_signal), x=xs)
         for n in range(1, maximum_n + 1):
             cosnpix_L = cos_vectorize(n * math.pi * xs/self.L)
             a = 2.0/self.L * integrate.simpson(y=(extended_signal * cosnpix_L), x=xs)
+            a_n[n] = a
+        return a_n, b_n
+
+    def _quarter_range_even(self, signal, maximum_n):
+        a_n = np.zeros((maximum_n + 1), dtype=float)
+        b_n = np.zeros((maximum_n + 1), dtype=float)
+        delta_x = self.L / len(signal)
+        xs = np.arange(0, self.L + delta_x, delta_x)  # [0, dx, ..., L]
+        next_signal_value = signal[-1] + (signal[-1] - signal[-2])
+        extended_signal = np.concatenate((signal, np.array([next_signal_value])), axis=0)
+        f_L = next_signal_value
+        a_n[0] = f_L
+        for n in range(1, maximum_n + 1):
+            sinnpi_2 = sin_vectorize(n * math.pi/2)
+            cosnpix_2L = cos_vectorize(n * math.pi * xs/(2 * self.L))
+            #a = -4.0 * f_L/(n * math.pi) * sinnpi_2 + 1.0/self.L * integrate.simpson(y=(extended_signal * cosnpix_2L), x=xs)
+            t1 = -8.0 * self.L * f_L/(n * math.pi) * sinnpi_2
+            t2 = 2.0 * (1 - (-1)**n) * integrate.simpson(y=(extended_signal * cosnpix_2L), x=xs)
+            a = 1.0/(2 * self.L) * (t1 + t2)
             a_n[n] = a
         return a_n, b_n
