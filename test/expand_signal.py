@@ -11,7 +11,7 @@ def main():
     logging.info("expand_signal.main()")
 
     L = 0.3
-    signal_length = 300
+    signal_length = 301
     expander = fourier_series.Expander(L)
 
 
@@ -31,9 +31,9 @@ def main():
     a_n_quarter_odd, b_n_quarter_odd = expander.coefficients(signal, expansion_type='quarter_odd')
     a_n_quarter_even, b_n_quarter_even = expander.coefficients(signal, expansion_type='quarter_even')
 
-    n_max = 50#len(a_n_odd) - 1
-    delta_x = L/signal_length
-    xs = np.arange(0, L, delta_x)
+    n_max = 50 #len(a_n_odd) - 1
+    delta_x = L/(signal_length - 1)
+    xs = np.arange(0, L + delta_x/2, delta_x)
 
     reconstruction_odd = expander.reconstruct(a_n_odd[0: n_max + 1], b_n_odd[0: n_max + 1], 'odd', len(xs))
     reconstruction_even = expander.reconstruct(a_n_even[0: n_max + 1], b_n_even[0: n_max + 1], 'even', len(xs))
