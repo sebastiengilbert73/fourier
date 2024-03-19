@@ -52,6 +52,72 @@ class Expander:
         else:
             raise NotImplementedError(f"Expander.evaluate(): Not implemented expansion type '{expansion_type}'")
 
+    def derivative(self, a_n, b_n, x, expansion_type='odd'):
+        if expansion_type == 'odd':
+            s = 0
+            for n in range(1, len(b_n)):
+                s += b_n[n] * n * math.pi/self.L * math.cos(n * math.pi * x/self.L)
+            return s
+        elif expansion_type == 'even':
+            s = 0
+            for n in range(1, len(a_n)):
+                s += -a_n[n] * n * math.pi/self.L * math.sin(n * math.pi * x/self.L)
+            return s
+        elif expansion_type == 'quarter_odd':
+            s = 0
+            for n in range(1, len(b_n)):
+                s += b_n[n] * n * math.pi/(2 * self.L) * math.cos(n * math.pi * x/(2.0 * self.L))
+            return s
+        elif expansion_type == 'quarter_even':
+            s = 0
+            for s in range(1, len(a_n)):
+                s += -a_n[n] * n * math.pi/(2 * self.L) * math.sin(n * math.pi * x/(2.0 * self.L))
+            return s
+        else:
+            raise NotImplementedError(f"Expander.derivative(): Not implemented expansion type '{expansion_type}'")
+
+    def derivative_vector(self, a_n, b_n, number_of_points, expansion_type):
+        delta_x = self.L/(number_of_points - 1)
+        xs = np.arange(0, self.L + delta_x/2, delta_x)
+        deriv = np.zeros_like(xs)
+        for k in range(len(xs)):
+            x = xs[k]
+            deriv[k] = self.derivative(a_n, b_n, x, expansion_type)
+        return deriv
+
+    def second_derivative(self, a_n, b_n, x, expansion_type='odd'):
+        if expansion_type == 'odd':
+            s = 0
+            for n in range(1, len(b_n)):
+                s += -b_n[n] * (n * math.pi/self.L)**2 * math.sin(n * math.pi * x/self.L)
+            return s
+        elif expansion_type == 'even':
+            s = 0
+            for n in range(1, len(a_n)):
+                s += -a_n[n] * (n * math.pi/self.L)**2 * math.cos(n * math.pi * x/self.L)
+            return s
+        elif expansion_type == 'quarter_odd':
+            s = 0
+            for n in range(1, len(b_n)):
+                s += -b_n[n] * (n * math.pi/(2 * self.L))**2 * math.sin(n * math.pi * x/(2.0 * self.L))
+            return s
+        elif expansion_type == 'quarter_even':
+            s = 0
+            for s in range(1, len(a_n)):
+                s += -a_n[n] * (n * math.pi/(2 * self.L))**2 * math.cos(n * math.pi * x/(2.0 * self.L))
+            return s
+        else:
+            raise NotImplementedError(f"Expander.second_derivative(): Not implemented expansion type '{expansion_type}'")
+
+    def second_derivative_vector(self, a_n, b_n, number_of_points, expansion_type):
+        delta_x = self.L/(number_of_points - 1)
+        xs = np.arange(0, self.L + delta_x/2, delta_x)
+        second_deriv = np.zeros_like(xs)
+        for k in range(len(xs)):
+            x = xs[k]
+            second_deriv[k] = self.second_derivative(a_n, b_n, x, expansion_type)
+        return second_deriv
+
     def reconstruct(self, a_n, b_n, expansion_type, signal_length):
         delta_x = self.L/(signal_length - 1)
         xs = np.arange(0, self.L + delta_x/2, delta_x)
