@@ -12,8 +12,10 @@ def main():
 
     L = 0.3
     signal_length = 301
-    expander = fourier_series.Expander(L)
-
+    expander_odd = fourier_series.Expander(L, 'odd')
+    expander_even = fourier_series.Expander(L, 'even')
+    expander_quarter_odd = fourier_series.Expander(L, 'quarter_odd')
+    expander_quarter_even = fourier_series.Expander(L, 'quarter_even')
 
     signal = np.zeros((signal_length), dtype=float)
     for k in range(len(signal)):
@@ -26,19 +28,19 @@ def main():
         if k > 280:
             signal[k] = 17.0 - k/28.
 
-    a_n_odd, b_n_odd = expander.coefficients(signal, expansion_type='odd')
-    a_n_even, b_n_even = expander.coefficients(signal, expansion_type='even')
-    a_n_quarter_odd, b_n_quarter_odd = expander.coefficients(signal, expansion_type='quarter_odd')
-    a_n_quarter_even, b_n_quarter_even = expander.coefficients(signal, expansion_type='quarter_even')
+    a_n_odd, b_n_odd = expander_odd.coefficients(signal)
+    a_n_even, b_n_even = expander_even.coefficients(signal)
+    a_n_quarter_odd, b_n_quarter_odd = expander_quarter_odd.coefficients(signal)
+    a_n_quarter_even, b_n_quarter_even = expander_quarter_even.coefficients(signal)
 
     n_max = 50 #len(a_n_odd) - 1
     delta_x = L/(signal_length - 1)
     xs = np.arange(0, L + delta_x/2, delta_x)
 
-    reconstruction_odd = expander.reconstruct(a_n_odd[0: n_max + 1], b_n_odd[0: n_max + 1], 'odd', len(xs))
-    reconstruction_even = expander.reconstruct(a_n_even[0: n_max + 1], b_n_even[0: n_max + 1], 'even', len(xs))
-    reconstruction_quarter_odd = expander.reconstruct(a_n_quarter_odd[0: n_max + 1], b_n_quarter_odd[0: n_max + 1], 'quarter_odd', len(xs))
-    reconstruction_quarter_even = expander.reconstruct(a_n_quarter_even[0: n_max + 1], b_n_quarter_even[0: n_max + 1], 'quarter_even', len(xs))
+    reconstruction_odd = expander_odd.reconstruct(a_n_odd[0: n_max + 1], b_n_odd[0: n_max + 1], len(xs))
+    reconstruction_even = expander_even.reconstruct(a_n_even[0: n_max + 1], b_n_even[0: n_max + 1], len(xs))
+    reconstruction_quarter_odd = expander_quarter_odd.reconstruct(a_n_quarter_odd[0: n_max + 1], b_n_quarter_odd[0: n_max + 1], len(xs))
+    reconstruction_quarter_even = expander_quarter_even.reconstruct(a_n_quarter_even[0: n_max + 1], b_n_quarter_even[0: n_max + 1], len(xs))
 
     fig, ax = plt.subplots()
     ax.plot(xs, signal, label='Original signal', linewidth=2)
