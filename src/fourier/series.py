@@ -10,7 +10,7 @@ def sin_vectorize(s):
 
 class Expander:
     def __init__(self, length, expansion_type='odd'):
-        self.expansion_types = ['odd', 'even', 'quarter_odd', 'quarter_even']
+        self.expansion_types = ['odd', 'even', 'quarter_odd', 'quarter_even', 'duplicate']
         if not expansion_type in self.expansion_types:
             raise NotImplementedError(f"Expander.__init__(): Not implemented expansion type {expansion_type}. The valid expansion types are {self.expansion_types}.")
         self.L = length
@@ -28,6 +28,7 @@ class Expander:
             return self._quarter_range_odd(signal, maximum_n)
         elif self.expansion_type == 'quarter_even':
             return self._quarter_range_even(signal, maximum_n)
+        
         else:
             raise NotImplementedError(f"Expander.coefficients(): Not implemented expansion type '{self.expansion_type}'")
 
@@ -180,3 +181,37 @@ class Expander:
             a = 1.0/(2 * self.L) * (t1 + t2)
             a_n[n] = a
         return a_n, b_n
+
+class PeriodicSignal:
+    def __init__(self, half_period):
+        self.L = half_period
+
+
+    def coefficients(self, signal, maximum_n=1000):
+        if not type(signal) == np.ndarray:
+            raise ValueError(f"PeriodicSignal.coefficients(): type(signal) = {type(signal)}. We expect np.ndarray.")
+        maximum_n = min(maximum_n, len(signal)//2)
+        a = np.zeros((maximum_n + 1))
+        b = np.zeros((maximum_n + 1))
+        delta_x = 2.0 * self.L/(len(signal) - 1)
+        x = np.arange(-self.L, self.L + delta_x/2, delta_x)
+        a[0] = 1.0/(2 * self.L) * integrate.simpson(y=signal, x=x)
+        for n in range(1, maximum_n + 1):
+            cosnpix_L = cos_vectorize(n * math.pi * x/self.L)
+            a[n] = 1.0/self.L * integrate.simpson(y=(signal * cosnpix_L), x=x)
+            sinnpix_L = sin_vectorize(n * math.pi * x/self.L)
+            b[n] = 1.0/self.L * integrate.simpson(y=(signal * sinnpix_L), x=x)
+        return a, b
+
+    def evaluate(self, x, a, b):
+        sum = a[0]
+        for n in range(1, len(a)):
+            sum += a[n] * math.cos(n * math.pi * x/self.L) + b[n] * math.sin(n * math.pi * x/self.L)
+        return sum
+
+    def evaluate_vector(self, xs, a, b):
+        ys = np.zeros_like(xs)
+        for k in range(len(xs)):
+            x = xs[k]
+            ys[k] = self.evaluate(x, a, b)
+        return ys
