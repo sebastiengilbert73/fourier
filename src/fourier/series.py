@@ -10,7 +10,7 @@ def sin_vectorize(s):
 
 class Expander:
     def __init__(self, length, expansion_type='odd'):
-        self.expansion_types = ['odd', 'even', 'quarter_odd', 'quarter_even', 'duplicate']
+        self.expansion_types = ['odd', 'even', 'quarter_odd', 'quarter_even', 'duplicate', 'odd_quarter', 'even_quarter']
         if not expansion_type in self.expansion_types:
             raise NotImplementedError(f"Expander.__init__(): Not implemented expansion type {expansion_type}. The valid expansion types are {self.expansion_types}.")
         self.L = length
