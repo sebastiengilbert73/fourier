@@ -21,25 +21,6 @@ def exp_vectorize(xs, ys):
     arr = np.array(values).reshape((len(ys), len(xs)))
     return arr
 
-"""def sum_vectorize(xs, ys):
-    sums = np.zeros((len(ys), len(xs)), dtype=complex)
-    for y_ndx in range(len(ys)):
-        y = ys[y_ndx]
-        for x_ndx in range(len(xs)):
-            x = xs[x_ndx]
-            sums[y_ndx, x_ndx] = x + y
-    return sums
-
-def exp_correct(xs, ys):
-    exps = np.zeros((len(ys), len(xs)), dtype=complex)
-    for y_ndx in range(len(ys)):
-        y = ys[y_ndx]
-        for x_ndx in range(len(xs)):
-            x = xs[x_ndx]
-            e = np.exp(x + y)
-            exps[y_ndx, x_ndx] = e
-    return exps
-"""
 
 class Expander:
     def __init__(self, length_x, length_y, expansion_type='odd'):
@@ -69,12 +50,11 @@ class Expander:
             return self._half_range_duplicate(signal, maximum_m, maximum_n)
         elif self.expansion_type == 'odd':
             return self._half_range_odd(signal, maximum_m, maximum_n)
+        elif self.expansion_type == 'even':
+            return self._half_range_even(signal, maximum_m, maximum_n)
         else:
             raise NotImplementedError(f"Expander.coefficients(): self.expansion_type ('{self.expansion_type}') is not implemented.")
-        """elif self.expansion_type == 'odd':
-            return self._half_range_odd(signal, maximum_n)
-        elif self.expansion_type == 'even':
-            return self._half_range_even(signal, maximum_n)
+        """
         elif self.expansion_type == 'quarter_odd' or self.expansion_type == 'odd_quarter':
             return self._quarter_range_odd(signal, maximum_n)
         elif self.expansion_type == 'quarter_even' or self.expansion_type == 'even_quarter':
@@ -161,6 +141,34 @@ class Expander:
                     -np.sum(exp_m_p * weighted_snl) * delta_x * delta_y \
                     + np.sum(exp_p_p * weighted_snl) * delta_x * delta_y \
                     - np.sum(exp_p_m * weighted_snl) * delta_x * delta_y \
+                    + np.sum(exp_m_m * weighted_snl) * delta_x * delta_y
+                )
+                c_m_n[m + maximum_m, n + maximum_n] = c
+        return c_m_n
+
+    def _half_range_even(self, signal, maximum_m, maximum_n):  # signal.shape = (H, W)
+        # c_m_n = 1/(4 Lx Ly) [ Integ_{0, Ly} Integ_{0, Lx} f(x, y) exp(-i pi (-m x/Lx + n y/Ly) ) dx dy
+        #   + Integ_{0, Ly} Integ_{0, Lx} f(x, y) exp(-i pi (m x/Lx + n y/Ly) ) dx dy
+        #   + Integ_{0, Ly} Integ_{0, Lx} f(x, y) exp(-i pi (m x/Lx - n y/Ly) ) dx dy
+        #   + Integ_{0, Ly} Integ_{0, Lx} f(x, y) exp(-i pi (-m x/Lx - n y/Ly) ) dx dy ]
+        c_m_n = np.zeros((2 * maximum_m + 1, 2 * maximum_n + 1), dtype=complex)
+        HW = signal.shape
+        delta_x = self.Lx / (HW[1] - 1)
+        delta_y = self.Ly / (HW[0] - 1)
+        xs = np.arange(0, self.Lx + delta_x / 2, delta_x)  # [0, dx, ..., Lx]
+        ys = np.arange(0, self.Ly + delta_y / 2, delta_y)  # [0, dy, ..., Ly]
+        weighted_snl = self._under_weight_boundaries(signal)
+
+        for m in range(-maximum_m, maximum_m + 1):
+            for n in range(-maximum_n, maximum_n + 1):
+                exp_m_p = exp_vectorize(-1j * np.pi * (-m * xs/self.Lx), -1j * np.pi * (n * ys/self.Ly) )
+                exp_p_p = exp_vectorize(-1j * np.pi * (m * xs/self.Lx), -1j * np.pi * (n * ys/self.Ly) )
+                exp_p_m = exp_vectorize(-1j * np.pi * (m * xs/self.Lx), -1j * np.pi * (-n * ys/self.Ly) )
+                exp_m_m = exp_vectorize(-1j * np.pi * (-m * xs/self.Lx), -1j * np.pi * (-n * ys/self.Ly) )
+                c = 0.25 / (self.Lx * self.Ly) * (
+                    np.sum(exp_m_p * weighted_snl) * delta_x * delta_y \
+                    + np.sum(exp_p_p * weighted_snl) * delta_x * delta_y \
+                    + np.sum(exp_p_m * weighted_snl) * delta_x * delta_y \
                     + np.sum(exp_m_m * weighted_snl) * delta_x * delta_y
                 )
                 c_m_n[m + maximum_m, n + maximum_n] = c
