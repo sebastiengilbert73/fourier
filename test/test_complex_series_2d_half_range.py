@@ -33,7 +33,12 @@ def main():
         y = y_ndx / (signal_HW[0] - 1) * Ly
         for x_ndx in range(signal_HW[1]):
             x = x_ndx/(signal_HW[1] - 1) * Lx
-            signal[y_ndx, x_ndx] = np.sin(6 * np.pi * x/Lx)# * np.cos(2 * np.pi * y/Ly)
+            #signal[y_ndx, x_ndx] = np.sin(6 * np.pi * x/Lx)# * np.cos(2 * np.pi * y/Ly)
+            r2_1 = (x - 0.7) ** 2 + (y - 0.4) ** 2
+            signal[y_ndx, x_ndx] += 2.0 * np.exp((-r2_1 / 0.7 ** 2))
+            r2_2 = (x - 0.3) ** 2 + (y - 0.8) ** 2
+            signal[y_ndx, x_ndx] -= 1.0 * np.exp((-r2_2 / 0.6 ** 2))
+            signal[y_ndx, x_ndx] += 0.2 * np.cos(8 * np.pi * (x + 2 * y)/Lx)
 
     delta_x = Lx / (signal_HW[1] - 1)
     xs = np.arange(0, Lx + delta_x / 2, delta_x)
@@ -49,6 +54,11 @@ def main():
     odd_expander = cs2d.Expander(Lx, Ly, expansion_type='odd')
     c_m_n_odd = odd_expander.coefficients(signal, maximum_m=100, maximum_n=100)
     odd_reconstructed_signal = odd_expander.reconstruct(c_m_n_odd, reconstruction_shapeHW)
+
+    # Even half-range expansion
+    even_expander = cs2d.Expander(Lx, Ly, expansion_type='even')
+    c_m_n_even = even_expander.coefficients(signal, maximum_m=100, maximum_n=100)
+    even_reconstructed_signal = even_expander.reconstruct(c_m_n_even, reconstruction_shapeHW)
 
     fig, axs = plt.subplots(3, 3, figsize=(15, 7))
     left_texts = ["Original signal", "Reconstruction\n(real part)", "c m,n\n(magnitude)"]
@@ -70,6 +80,14 @@ def main():
     plt.colorbar(im11, ax=axs[1, 1])
     im21 = axs[2, 1].imshow(np.absolute(c_m_n_odd.T))
     plt.colorbar(im21, ax=axs[2, 1])
+
+    axs[0, 2].set_title("Even half-range")
+    im02 = axs[0, 2].imshow(signal, label="Original signal", cmap="viridis")
+    plt.colorbar(im02, ax=axs[0, 2])
+    im12 = axs[1, 2].imshow(even_reconstructed_signal.real, label="Reconstruction, real part", cmap="viridis")
+    plt.colorbar(im12, ax=axs[1, 2])
+    im22 = axs[2, 2].imshow(np.absolute(c_m_n_even.T))
+    plt.colorbar(im22, ax=axs[2, 2])
 
     fig.tight_layout()
     plt.show()
