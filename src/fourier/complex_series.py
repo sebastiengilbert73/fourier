@@ -81,7 +81,7 @@ class Expander:
         return reconstruction
 
     def _half_range_duplicate(self, signal, maximum_n):
-        # c_n = 1/(2*L) [ ((-1)**n + 1) Int_{0, L} f(x) exp(-i*n*pi*x/L) dx ]
+        # c_n = 1/(2*L) [ ((-1)**n + 1) Integ_{0, L} f(x) exp(-i*n*pi*x/L) dx ]
         c_n = np.zeros((2 * maximum_n + 1), dtype=complex)
         delta_x = self.L / (len(signal) - 1)
         xs = np.arange(0, self.L + delta_x / 2, delta_x)  # [0, dx, ..., L]
