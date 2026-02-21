@@ -28,7 +28,8 @@ class Expander:
             return self._quarter_range_odd(signal, maximum_n)
         elif self.expansion_type == 'quarter_even':
             return self._quarter_range_even(signal, maximum_n)
-        
+        elif self.expansion_type == 'duplicate':
+            return self._half_range_duplicate(signal, maximum_n)
         else:
             raise NotImplementedError(f"Expander.coefficients(): Not implemented expansion type '{self.expansion_type}'")
 
@@ -54,6 +55,12 @@ class Expander:
             for n in range(1, len(a_n)):
                 s += a_n[n] * math.cos(n * math.pi * x/(2.0 * self.L))
             return s
+        elif self.expansion_type == 'duplicate':
+            s = a_n[0]
+            for n in range(1, len(a_n)):
+                s += a_n[n] * math.cos(n * math.pi * x/self.L)
+                s += b_n[n] * math.sin(n * math.pi * x/self.L)
+            return s
         else:
             raise NotImplementedError(f"Expander.evaluate(): Not implemented expansion type '{self.expansion_type}'")
 
@@ -75,8 +82,14 @@ class Expander:
             return s
         elif self.expansion_type == 'quarter_even':
             s = 0
-            for s in range(1, len(a_n)):
+            for n in range(1, len(a_n)):
                 s += -a_n[n] * n * math.pi/(2 * self.L) * math.sin(n * math.pi * x/(2.0 * self.L))
+            return s
+        elif self.expansion_type == 'duplicate':
+            s = 0
+            for n in range(1, len(a_n)):
+                s += -a_n[n] * n * math.pi/self.L * math.sin(n * math.pi * x/self.L)
+                s += b_n[n] * n * math.pi/self.L * math.cos(n * math.pi * x/self.L)
             return s
         else:
             raise NotImplementedError(f"Expander.derivative(): Not implemented expansion type '{self.expansion_type}'")
@@ -108,8 +121,14 @@ class Expander:
             return s
         elif self.expansion_type == 'quarter_even':
             s = 0
-            for s in range(1, len(a_n)):
+            for n in range(1, len(a_n)):
                 s += -a_n[n] * (n * math.pi/(2 * self.L))**2 * math.cos(n * math.pi * x/(2.0 * self.L))
+            return s
+        elif self.expansion_type == 'duplicate':
+            s = 0
+            for n in range(1, len(a_n)):
+                s += -a_n[n] * (n * math.pi/self.L)**2 * math.cos(n * math.pi * x/self.L)
+                s += -b_n[n] * (n * math.pi/self.L)**2 * math.sin(n * math.pi * x/self.L)
             return s
         else:
             raise NotImplementedError(f"Expander.second_derivative(): Not implemented expansion type '{self.expansion_type}'")
@@ -180,6 +199,19 @@ class Expander:
             t2 = 2.0 * (1 - (-1)**n) * integrate.simpson(y=(signal * cosnpix_2L), x=xs)
             a = 1.0/(2 * self.L) * (t1 + t2)
             a_n[n] = a
+        return a_n, b_n
+
+    def _half_range_duplicate(self, signal, maximum_n):
+        a_n = np.zeros((maximum_n + 1), dtype=float)
+        b_n = np.zeros((maximum_n + 1), dtype=float)
+        delta_x = self.L / (len(signal) - 1)
+        xs = np.arange(0, self.L + delta_x/2, delta_x)  # [0, dx, ..., L]
+        a_n[0] = 1.0/self.L * integrate.simpson(y=(signal), x=xs)
+        for n in range(1, maximum_n + 1):
+            cosnpix_L = cos_vectorize(n * math.pi * xs/self.L)
+            sinnpix_L = sin_vectorize(n * math.pi * xs/self.L)
+            a_n[n] = (1 + (-1)**n)/self.L * integrate.simpson(y=(signal * cosnpix_L), x=xs)
+            b_n[n] = (1 + (-1)**n)/self.L * integrate.simpson(y=(signal * sinnpix_L), x=xs)
         return a_n, b_n
 
 class PeriodicSignal:
