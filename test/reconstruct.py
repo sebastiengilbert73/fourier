@@ -10,13 +10,20 @@ logging.basicConfig(level=logging.DEBUG, format='%(asctime)-15s %(levelname)s %(
 def main():
     logging.info("reconstruct.main()")
 
-    signal = np.array([0, 1, 0])
+    xs = np.linspace(0, 1, 101)
+    signal = xs**2 * np.sin(xs * np.pi)
     expander = fourier_series.Expander(length=1.0, expansion_type='odd')
     a, b = expander.coefficients(signal, maximum_n=1000)
     logging.info(f"a = {a}\n\tb = {b}")
 
-    reconstruction = expander.reconstruct(a, b, signal_length=len(signal))
+    reconstruction = expander.reconstruct(a, b, signal_length=101)
     logging.info(f"reconstruction = {reconstruction}")
+
+    plt.plot(xs, signal, label='original', lw=2)
+    plt.plot(xs, reconstruction, label='reconstruction')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
 
 
 if __name__ == '__main__':
